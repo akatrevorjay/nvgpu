@@ -1,7 +1,7 @@
 /*
  * Tegra Virtualized GPU Platform Interface
  *
- * Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,6 +18,7 @@
 #include "gk20a.h"
 #include "hal_gk20a.h"
 #include "platform_gk20a.h"
+#include "vgpu/clk_vgpu.h"
 
 static int gk20a_tegra_probe(struct device *dev)
 {
@@ -64,6 +65,14 @@ struct gk20a_platform vgpu_tegra_platform = {
 
 	.probe = gk20a_tegra_probe,
 	.default_big_page_size	= SZ_128K,
+
+	.clk_get_rate = vgpu_clk_get_rate,
+	.clk_round_rate = vgpu_clk_round_rate,
+	.clk_set_rate = vgpu_clk_set_rate,
+	.get_clk_freqs = vgpu_clk_get_freqs,
+
+	/* frequency scaling configuration */
+	.devfreq_governor = "userspace",
 
 	.virtual_dev = true,
 };
