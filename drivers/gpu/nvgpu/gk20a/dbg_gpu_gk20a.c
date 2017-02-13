@@ -118,13 +118,17 @@ static int gk20a_dbg_gpu_do_dev_open(struct inode *inode,
 	else
 		g = container_of(inode->i_cdev,
 				 struct gk20a, prof.cdev);
+	g = gk20a_get(g);
+	if (!g)
+		return -ENODEV;
+
 	dev = g->dev;
 
 	gk20a_dbg(gpu_dbg_fn | gpu_dbg_gpu_dbg, "dbg session: %s", dev_name(dev));
 
 	err  = alloc_session(&dbg_session);
 	if (err)
-		return err;
+		goto free_ref;
 
 	filp->private_data = dbg_session;
 	dbg_session->dev   = dev;
@@ -141,6 +145,9 @@ static int gk20a_dbg_gpu_do_dev_open(struct inode *inode,
 	dbg_session->dbg_events.num_pending_events = 0;
 
 	return 0;
+free_ref:
+	gk20a_put(g);
+	return err;
 }
 
 /* used in scenarios where the debugger session can take just the inter-session
@@ -529,6 +536,8 @@ int gk20a_dbg_gpu_dev_release(struct inode *inode, struct file *filp)
 	nvgpu_mutex_release(&g->dbg_sessions_lock);
 
 	kfree(dbg_s);
+	gk20a_put(g);
+
 	return 0;
 }
 
