@@ -192,10 +192,9 @@ static int vgpu_intr_thread(void *dev_id)
 	return 0;
 }
 
-static void vgpu_remove_support(struct device *dev)
+static void vgpu_remove_support(struct gk20a *g)
 {
-	struct gk20a *g = get_gk20a(dev);
-	struct vgpu_priv_data *priv = vgpu_get_priv_data_from_dev(dev);
+	struct vgpu_priv_data *priv = vgpu_get_priv_data_from_dev(g->dev);
 	struct tegra_vgpu_intr_msg msg;
 	int err;
 
@@ -266,7 +265,7 @@ static int vgpu_init_support(struct platform_device *pdev)
 	return 0;
 
  fail:
-	vgpu_remove_support(&pdev->dev);
+	vgpu_remove_support(g);
 	return err;
 }
 
@@ -581,6 +580,8 @@ int vgpu_probe(struct platform_device *pdev)
 	platform->vgpu_priv = priv;
 	gk20a->dev = dev;
 
+	gk20a->is_fmodel = platform->is_fmodel;
+
 	nvgpu_kmem_init(gk20a);
 
 	err = gk20a_user_init(dev, INTERFACE_NAME, &nvgpu_class);
@@ -663,7 +664,7 @@ int vgpu_remove(struct platform_device *pdev)
 
 	vgpu_pm_qos_remove(dev);
 	if (g->remove_support)
-		g->remove_support(dev);
+		g->remove_support(g);
 
 	vgpu_comm_deinit();
 	gk20a_sched_ctrl_cleanup(g);

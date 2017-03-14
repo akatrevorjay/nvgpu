@@ -808,7 +808,7 @@ static void gk20a_remove_mm_ce_support(struct mm_gk20a *mm)
 	struct gk20a *g = gk20a_from_mm(mm);
 
 	if (mm->vidmem.ce_ctx_id != (u32)~0)
-		gk20a_ce_delete_context(g->dev, mm->vidmem.ce_ctx_id);
+		gk20a_ce_delete_context_priv(g, mm->vidmem.ce_ctx_id);
 
 	mm->vidmem.ce_ctx_id = (u32)~0;
 
@@ -1237,11 +1237,10 @@ static int alloc_gmmu_pages(struct vm_gk20a *vm, u32 order,
 	u32 num_pages = 1 << order;
 	u32 len = num_pages * PAGE_SIZE;
 	int err;
-	struct gk20a_platform *platform = dev_get_drvdata(g->dev);
 
 	gk20a_dbg_fn("");
 
-	if (platform->is_fmodel)
+	if (g->is_fmodel)
 		return alloc_gmmu_phys_pages(vm, order, entry);
 
 	/*
@@ -1267,7 +1266,6 @@ void free_gmmu_pages(struct vm_gk20a *vm,
 		     struct gk20a_mm_entry *entry)
 {
 	struct gk20a *g = gk20a_from_vm(vm);
-	struct gk20a_platform *platform = dev_get_drvdata(g->dev);
 
 	gk20a_dbg_fn("");
 
@@ -1277,7 +1275,7 @@ void free_gmmu_pages(struct vm_gk20a *vm,
 	if (entry->woffset) /* fake shadow mem */
 		return;
 
-	if (platform->is_fmodel) {
+	if (g->is_fmodel) {
 		free_gmmu_phys_pages(vm, entry);
 		return;
 	}
@@ -1295,11 +1293,9 @@ void free_gmmu_pages(struct vm_gk20a *vm,
 
 int map_gmmu_pages(struct gk20a *g, struct gk20a_mm_entry *entry)
 {
-	struct gk20a_platform *platform = dev_get_drvdata(g->dev);
-
 	gk20a_dbg_fn("");
 
-	if (platform->is_fmodel)
+	if (g->is_fmodel)
 		return map_gmmu_phys_pages(entry);
 
 	if (IS_ENABLED(CONFIG_ARM64)) {
@@ -1321,11 +1317,9 @@ int map_gmmu_pages(struct gk20a *g, struct gk20a_mm_entry *entry)
 
 void unmap_gmmu_pages(struct gk20a *g, struct gk20a_mm_entry *entry)
 {
-	struct gk20a_platform *platform = dev_get_drvdata(g->dev);
-
 	gk20a_dbg_fn("");
 
-	if (platform->is_fmodel) {
+	if (g->is_fmodel) {
 		unmap_gmmu_phys_pages(entry);
 		return;
 	}
@@ -4089,6 +4083,7 @@ static void gk20a_vm_remove_support_nofree(struct vm_gk20a *vm)
 	struct mapped_buffer_node *mapped_buffer;
 	struct vm_reserved_va_node *va_node, *va_node_tmp;
 	struct rb_node *node;
+	struct gk20a *g = vm->mm->g;
 
 	gk20a_dbg_fn("");
 
@@ -4097,7 +4092,7 @@ static void gk20a_vm_remove_support_nofree(struct vm_gk20a *vm)
 	 * pool involves unmapping a GMMU mapping which means aquiring the
 	 * update_gmmu_lock.
 	 */
-	if (!gk20a_platform_has_syncpoints(gk20a_from_vm(vm)->dev)) {
+	if (!(g->gpu_characteristics.flags & NVGPU_GPU_FLAGS_HAS_SYNCPOINTS)) {
 		if (vm->sema_pool) {
 			nvgpu_semaphore_pool_unmap(vm->sema_pool, vm);
 			nvgpu_semaphore_pool_put(vm->sema_pool);
@@ -4191,7 +4186,7 @@ static int gk20a_init_sema_pool(struct vm_gk20a *vm)
 	/*
 	 * Don't waste the memory on semaphores if we don't need them.
 	 */
-	if (gk20a_platform_has_syncpoints(g->dev))
+	if (g->gpu_characteristics.flags & NVGPU_GPU_FLAGS_HAS_SYNCPOINTS)
 		return 0;
 
 	if (vm->sema_pool)
