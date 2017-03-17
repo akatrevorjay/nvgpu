@@ -105,6 +105,7 @@ enum {
 	TEGRA_VGPU_CMD_GET_GPU_CLK_RATE = 69,
 	TEGRA_VGPU_CMD_GET_GPU_FREQ_TABLE = 70,
 	TEGRA_VGPU_CMD_CAP_GPU_CLK_RATE = 71,
+	TEGRA_VGPU_CMD_PROF_MGT = 72,
 };
 
 struct tegra_vgpu_connect_params {
@@ -479,6 +480,16 @@ struct tegra_vgpu_get_gpu_freq_table_params {
 	u32 freqs[TEGRA_VGPU_GPU_FREQ_TABLE_SIZE]; /* in kHz */
 };
 
+enum {
+	TEGRA_VGPU_PROF_GET_GLOBAL = 0,
+	TEGRA_VGPU_PROF_GET_CONTEXT,
+	TEGRA_VGPU_PROF_RELEASE
+};
+
+struct tegra_vgpu_prof_mgt_params {
+	u32 mode;
+};
+
 struct tegra_vgpu_cmd_msg {
 	u32 cmd;
 	int ret;
@@ -529,6 +540,7 @@ struct tegra_vgpu_cmd_msg {
 		struct tegra_vgpu_suspend_resume_contexts resume_contexts;
 		struct tegra_vgpu_clear_sm_error_state clear_sm_error_state;
 		struct tegra_vgpu_get_gpu_freq_table_params get_gpu_freq_table;
+		struct tegra_vgpu_prof_mgt_params prof_management;
 		char padding[192];
 	} params;
 };
