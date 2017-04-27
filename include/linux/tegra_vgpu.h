@@ -106,6 +106,7 @@ enum {
 	TEGRA_VGPU_CMD_GET_GPU_FREQ_TABLE = 70,
 	TEGRA_VGPU_CMD_CAP_GPU_CLK_RATE = 71,
 	TEGRA_VGPU_CMD_PROF_MGT = 72,
+	TEGRA_VGPU_CMD_GET_TIMESTAMPS_ZIPPER = 74,
 };
 
 struct tegra_vgpu_connect_params {
@@ -405,6 +406,22 @@ struct tegra_vgpu_read_ptimer_params {
 	u64 time;
 };
 
+#define TEGRA_VGPU_GET_TIMESTAMPS_ZIPPER_MAX_COUNT      16
+#define TEGRA_VGPU_GET_TIMESTAMPS_ZIPPER_SRC_ID_TSC     1
+struct tegra_vgpu_get_timestamps_zipper_params {
+	/* timestamp pairs */
+	struct {
+		/* gpu timestamp value */
+		u64 cpu_timestamp;
+		/* raw GPU counter (PTIMER) value */
+		u64 gpu_timestamp;
+	} samples[TEGRA_VGPU_GET_TIMESTAMPS_ZIPPER_MAX_COUNT];
+	/* number of pairs to read */
+	u32 count;
+	/* cpu clock source id */
+	u32 source_id;
+};
+
 struct tegra_vgpu_set_powergate_params {
 	u32 mode;
 };
@@ -541,6 +558,7 @@ struct tegra_vgpu_cmd_msg {
 		struct tegra_vgpu_clear_sm_error_state clear_sm_error_state;
 		struct tegra_vgpu_get_gpu_freq_table_params get_gpu_freq_table;
 		struct tegra_vgpu_prof_mgt_params prof_management;
+		struct tegra_vgpu_get_timestamps_zipper_params get_timestamps_zipper;
 		char padding[192];
 	} params;
 };

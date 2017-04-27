@@ -3,7 +3,7 @@
  *
  * GK20A Tegra HAL interface.
  *
- * Copyright (c) 2014-2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2014-2017, NVIDIA CORPORATION.  All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
@@ -18,6 +18,7 @@
 #include "hal_gk20a.h"
 #include "ltc_gk20a.h"
 #include "fb_gk20a.h"
+#include "ctrl_gk20a.h"
 #include "gk20a.h"
 #include "gk20a_gating_reglist.h"
 #include "channel_gk20a.h"
@@ -170,6 +171,7 @@ int gk20a_init_hal(struct gk20a *g)
 	gops->chip_init_gpu_characteristics = gk20a_init_gpu_characteristics;
 	gops->get_litter_value = gk20a_get_litter_value;
 	gops->read_ptimer = gk20a_read_ptimer;
+	gops->bus.get_timestamps_zipper = gk20a_get_timestamps_zipper;
 
 	c->twod_class = FERMI_TWOD_A;
 	c->threed_class = KEPLER_C;

@@ -45,6 +45,7 @@ struct dbg_profiler_object_data;
 #include "as_gk20a.h"
 #include "clk_gk20a.h"
 #include "ce2_gk20a.h"
+#include "ctrl_gk20a.h"
 #include "fifo_gk20a.h"
 #include "tsg_gk20a.h"
 #include "gr_gk20a.h"
@@ -773,6 +774,12 @@ struct gpu_ops {
 					       void *scatter_buffer_ptr,
 					       size_t scatter_buffer_size);
 	} cde;
+
+	struct {
+		int (*get_timestamps_zipper)(struct gk20a *g,
+			u32 source_id, u32 count,
+			struct nvgpu_cpu_time_correlation_sample *);
+	} bus;
 
 	int (*get_litter_value)(struct gk20a *g, int value);
 	int (*chip_init_gpu_characteristics)(struct gk20a *g);

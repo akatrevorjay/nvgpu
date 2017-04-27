@@ -643,58 +643,17 @@ static inline u64 get_cpu_timestamp_timeofday(void)
 	return timeval_to_jiffies(&tv);
 }
 
-static inline int get_timestamps_zipper(struct gk20a *g,
-		u64 (*get_cpu_timestamp)(void),
-		struct nvgpu_gpu_get_cpu_time_correlation_info_args *args)
+int gk20a_get_timestamps_zipper(struct gk20a *g,
+		u32 source_id, u32 count,
+		struct nvgpu_cpu_time_correlation_sample *samples)
 {
 	int err = 0;
 	unsigned int i = 0;
 	u32 gpu_timestamp_hi_new = 0;
 	u32 gpu_timestamp_hi_old = 0;
-
-	if (gk20a_busy(g)) {
-		gk20a_err(dev_from_gk20a(g), "GPU not powered on\n");
-		err = -EINVAL;
-		goto end;
-	}
-
-	/* get zipper reads of gpu and cpu counter values */
-	gpu_timestamp_hi_old = gk20a_readl(g, timer_time_1_r());
-	for (i = 0; i < args->count; i++) {
-		u32 gpu_timestamp_lo = 0;
-		u32 gpu_timestamp_hi = 0;
-
-		gpu_timestamp_lo = gk20a_readl(g, timer_time_0_r());
-		args->samples[i].cpu_timestamp = get_cpu_timestamp();
-		rmb(); /* maintain zipper read order */
-		gpu_timestamp_hi_new = gk20a_readl(g, timer_time_1_r());
-
-		/* pick the appropriate gpu counter hi bits */
-		gpu_timestamp_hi = (gpu_timestamp_lo & (1L << 31)) ?
-			gpu_timestamp_hi_old : gpu_timestamp_hi_new;
-
-		args->samples[i].gpu_timestamp =
-			((u64)gpu_timestamp_hi << 32) | (u64)gpu_timestamp_lo;
-
-		gpu_timestamp_hi_old = gpu_timestamp_hi_new;
-	}
-
-end:
-	gk20a_idle(g);
-	return err;
-}
-
-static int nvgpu_gpu_get_cpu_time_correlation_info(
-	struct gk20a *g,
-	struct nvgpu_gpu_get_cpu_time_correlation_info_args *args)
-{
-	int err = 0;
 	u64 (*get_cpu_timestamp)(void) = NULL;
 
-	if (args->count > NVGPU_GPU_GET_CPU_TIME_CORRELATION_INFO_MAX_COUNT)
-		return -EINVAL;
-
-	switch (args->source_id) {
+	switch (source_id) {
 	case NVGPU_GPU_GET_CPU_TIME_CORRELATION_INFO_SRC_ID_TSC:
 		get_cpu_timestamp = get_cpu_timestamp_tsc;
 		break;
@@ -709,7 +668,67 @@ static int nvgpu_gpu_get_cpu_time_correlation_info(
 		return -EINVAL;
 	}
 
-	err = get_timestamps_zipper(g, get_cpu_timestamp, args);
+	if (gk20a_busy(g)) {
+		gk20a_err(dev_from_gk20a(g), "GPU not powered on\n");
+		err = -EINVAL;
+		goto end;
+	}
+
+	/* get zipper reads of gpu and cpu counter values */
+	gpu_timestamp_hi_old = gk20a_readl(g, timer_time_1_r());
+	for (i = 0; i < count; i++) {
+		u32 gpu_timestamp_lo = 0;
+		u32 gpu_timestamp_hi = 0;
+
+		gpu_timestamp_lo = gk20a_readl(g, timer_time_0_r());
+		samples[i].cpu_timestamp = get_cpu_timestamp();
+		rmb(); /* maintain zipper read order */
+		gpu_timestamp_hi_new = gk20a_readl(g, timer_time_1_r());
+
+		/* pick the appropriate gpu counter hi bits */
+		gpu_timestamp_hi = (gpu_timestamp_lo & (1L << 31)) ?
+			gpu_timestamp_hi_old : gpu_timestamp_hi_new;
+
+		samples[i].gpu_timestamp =
+			((u64)gpu_timestamp_hi << 32) | (u64)gpu_timestamp_lo;
+
+		gpu_timestamp_hi_old = gpu_timestamp_hi_new;
+	}
+
+end:
+	gk20a_idle(g);
+	return err;
+}
+
+static int nvgpu_gpu_get_cpu_time_correlation_info(
+	struct gk20a *g,
+	struct nvgpu_gpu_get_cpu_time_correlation_info_args *args)
+{
+	struct nvgpu_cpu_time_correlation_sample *samples;
+	int err;
+	u32 i;
+
+	if (args->count >= NVGPU_GPU_GET_CPU_TIME_CORRELATION_INFO_MAX_COUNT) {
+		return -EINVAL;
+	}
+
+	samples = kzalloc(args->count *
+		sizeof(struct nvgpu_cpu_time_correlation_sample), GFP_KERNEL);
+	if (!samples) {
+		return -ENOMEM;
+	}
+
+	err = g->ops.bus.get_timestamps_zipper(g,
+			args->source_id, args->count, samples);
+	if (!err) {
+		for (i = 0; i < args->count; i++) {
+			args->samples[i].cpu_timestamp = samples[i].cpu_timestamp;
+			args->samples[i].gpu_timestamp = samples[i].gpu_timestamp;
+		}
+	}
+
+	kfree(samples);
+
 	return err;
 }
 
