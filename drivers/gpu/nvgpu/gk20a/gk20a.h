@@ -347,6 +347,8 @@ struct gpu_ops {
 					struct mem_desc *mem, u64 gpu_va);
 		void (*init_elcg_mode)(struct gk20a *g, u32 mode, u32 engine);
 		void (*load_tpc_mask)(struct gk20a *g);
+		int (*set_czf_bypass)(struct gk20a *g,
+				      struct channel_gk20a *ch);
 	} gr;
 	const char *name;
 	struct {
