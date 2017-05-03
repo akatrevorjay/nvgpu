@@ -148,7 +148,7 @@ int nvgpu_probe(struct gk20a *g,
 
 	err = gk20a_secure_page_alloc(g->dev);
 	if (err)
-		dev_err(g->dev,
+		dev_info(g->dev,
 			"failed to allocate secure buffer %d\n", err);
 
 	if (platform->late_probe) {
