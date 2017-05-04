@@ -1142,14 +1142,10 @@ struct gk20a_cyclestate_buffer_elem {
 
 /* debug accessories */
 
-#ifdef CONFIG_DEBUG_FS
-    /* debug info, default is compiled-in but effectively disabled (0 mask) */
-    /*e.g: echo 1 > /d/gk20a.0/dbg_mask */
-    #define GK20A_DEFAULT_DBG_MASK 0
-#else
-    /* manually enable and turn it on the mask */
-    #define GK20A_DEFAULT_DBG_MASK (gpu_dbg_info)
-#endif
+/* debug info, default is compiled-in but effectively disabled (0 mask) */
+/*e.g: echo 1 > /d/gk20a.0/dbg_mask */
+/* or, manually enable and turn it on the mask */
+#define GK20A_DEFAULT_DBG_MASK 0
 
 enum gk20a_dbg_categories {
 	gpu_dbg_info    = BIT(0),  /* lightly verbose info */
