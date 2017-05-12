@@ -1908,12 +1908,11 @@ void gk20a_idle(struct gk20a *g)
 	struct device *dev;
 
 	atomic_dec(&g->usage_count);
-	down_read(&g->busy_lock);
 
 	dev = g->dev;
 
 	if (!(dev && gk20a_can_busy(g)))
-		goto fail;
+		return;
 
 	if (pm_runtime_enabled(dev)) {
 #ifdef CONFIG_PM
@@ -1927,8 +1926,6 @@ void gk20a_idle(struct gk20a *g)
 	} else {
 		gk20a_scale_notify_idle(dev);
 	}
-fail:
-	up_read(&g->busy_lock);
 }
 
 void gk20a_disable(struct gk20a *g, u32 units)
