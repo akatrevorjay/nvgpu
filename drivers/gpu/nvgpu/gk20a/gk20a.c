@@ -1496,6 +1496,8 @@ static int gk20a_pm_suspend(struct device *dev)
 	if (!g->power_on)
 		return 0;
 
+	gk20a_scale_notify_idle(dev);
+
 	ret = gk20a_pm_runtime_suspend(dev);
 	if (ret)
 		goto fail;
@@ -1508,6 +1510,8 @@ static int gk20a_pm_suspend(struct device *dev)
 	return 0;
 
 fail:
+	gk20a_scale_notify_busy(dev);
+
 	if (platform->user_railgate_disabled)
 		gk20a_busy_noresume(dev);
 
@@ -1527,6 +1531,8 @@ static int gk20a_pm_resume(struct device *dev)
 		return 0;
 
 	ret = gk20a_pm_runtime_resume(dev);
+
+	gk20a_scale_notify_busy(dev);
 
 	g->suspended = false;
 
