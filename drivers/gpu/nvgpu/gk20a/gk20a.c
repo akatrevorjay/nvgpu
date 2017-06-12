@@ -2026,13 +2026,13 @@ int __gk20a_do_idle(struct device *dev, bool force_reset)
 
 	/* check and wait until GPU is idle (with a timeout) */
 	do {
-		msleep(1);
+		usleep_range(1000, 1100);
 		ref_cnt = atomic_read(&dev->power.usage_count);
 	} while (ref_cnt != target_ref_cnt && !nvgpu_timeout_expired(&timeout));
 
 	if (ref_cnt != target_ref_cnt) {
-		gk20a_err(dev, "failed to idle - refcount %d != 1\n",
-			ref_cnt);
+		gk20a_err(dev, "failed to idle - refcount %d != %d\n",
+			ref_cnt, target_ref_cnt);
 		goto fail_drop_usage_count;
 	}
 
