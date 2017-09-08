@@ -206,18 +206,20 @@ static int init_runlist(struct gk20a *g, struct fifo_gk20a *f)
 		runlist->active_channels =
 			kzalloc(DIV_ROUND_UP(f->num_channels, BITS_PER_BYTE),
 				GFP_KERNEL);
+
 		if (!runlist->active_channels)
 			goto clean_up_runlist;
 
-			runlist_size  = sizeof(u16) * f->num_channels;
-			for (i = 0; i < MAX_RUNLIST_BUFFERS; i++) {
-				int err = gk20a_gmmu_alloc_sys(g, runlist_size,
-						&runlist->mem[i]);
-				if (err) {
-					dev_err(d, "memory allocation failed\n");
-					goto clean_up_runlist;
-				}
+		runlist_size  = sizeof(u16) * f->num_channels;
+		for (i = 0; i < MAX_RUNLIST_BUFFERS; i++) {
+			int err = gk20a_gmmu_alloc_sys(g, runlist_size,
+					&runlist->mem[i]);
+			if (err) {
+				dev_err(d, "memory allocation failed\n");
+				goto clean_up_runlist;
 			}
+		}
+
 		nvgpu_mutex_init(&runlist->mutex);
 
 		/* None of buffers is pinned if this value doesn't change.
